@@ -2,12 +2,14 @@ import requests
 import time
 from datetime import datetime
 import re
+import pymsteams
 
 PRE_ENV_CONSOLE = 'http://XX.XX.X.XXX:8004/system/console/'
 JMX_URL =  PRE_ENV_CONSOLE + 'jmx'
 VMSTAT_URL = PRE_ENV_CONSOLE + 'vmstat'
 MEMORY_URL = PRE_ENV_CONSOLE + 'memoryusage'
 GC_URL = PRE_ENV_CONSOLE + 'jmx/java.lang%3Atype%3DMemory/op/gc'
+TEAMS = pymsteams.connectorcard("XXXXX")
 
 USERNAME = 'XXXX'
 PASSWORD = 'XXXX'
@@ -69,6 +71,8 @@ def garbage_collector():
         response.raise_for_status()
 
         write_in_log(f"  ------ GC ejecutado a las {get_time()}")
+        TEAMS.text(f"GC ejecutado")
+        TEAMS.send()
     
     except requests.exceptions.RequestException as e:
         write_in_log(f"{get_time()}\n  Error al ejecutar el GC: {e}")
@@ -83,6 +87,8 @@ def restart_aem():
         response.raise_for_status()
 
         write_in_log(f"  ------ REINICIANDO a las {get_time()}\n  Script inactivo durante {SECONDS_WAIT_ON_RESTART} segundos")
+        TEAMS.text(f"REINICIANDO...")
+        TEAMS.send()
         time.sleep(SECONDS_WAIT_ON_RESTART)
     
     except requests.exceptions.RequestException as e:
@@ -111,6 +117,8 @@ def main():
         if sessions_number > SESSION_LIMIT:
             COUNT_LIMIT = COUNT_LIMIT + 1
             write_in_log(f"  --- AVISO DE SESIONES Nº {COUNT_LIMIT}: (Sesiones) Mayor de {SESSION_LIMIT}")
+            TEAMS.text(f"AVISO DE SESIONES Nº {COUNT_LIMIT}: (Sesiones) Mayor de {SESSION_LIMIT}")
+            TEAMS.send()
 
             if COUNT_LIMIT == 2:
                 garbage_collector()
@@ -121,6 +129,8 @@ def main():
 
         if memory_usage > MEMORY_LIMIT:
             write_in_log(f"  --- AVISO DE MEMORIA: (GC) Mayor de {MEMORY_LIMIT}%")
+            TEAMS.text(f"AVISO DE MEMORIA: (GC) Mayor de {MEMORY_LIMIT}%")
+            TEAMS.send()
             garbage_collector()
 
 # Bucle on SECONDS_INTERVAL
